@@ -1,0 +1,755 @@
+`timescale 1ns / 1ps
+module ncontrol
+(
+
+  input wire clk,
+  input wire rst,
+  input wire load,
+  input wire insload,
+  input wire insex,
+  input wire perform,
+  input wire [3:0] data_in,
+  input wire [2:0] ins,
+  output reg [3:0] data_out,
+  output logic [6:0] seg,
+  output logic dp,
+  output logic [3:0] an
+);
+logic nextclock;
+ntimer tim (.clock(clk),.nextclock(nextclock));
+wire [3:0] data_out1;
+wire [3:0] data_out2;
+wire [3:0] data_out3;
+wire [2:0] data_out4;
+
+logic [4:0] b= 5'b10011;
+logic [4:0] c = 5'b10011;
+logic [4:0]d = 5'b10011;
+logic [4:0]a = 5'b10011;
+
+ncontrol2 nc2(.clk(nextclock),.rst(rst),.insload(load),.insex(insex),.perform(perform),.ins(ins),.data_out(data_out4));
+always @ (posedge nextclock)
+        begin
+        if(rst == 1) begin 
+        a <= 5'b10011;
+        b <= 5'b10011;
+        c <= 5'b10011;
+        d <= 5'b10011;
+        
+        end
+        else if(perform == 1 ||insex ==1) begin
+        a <= data_out;
+         c <= data_out1;
+       d <= data_out2;
+       b <= 5'b10011;
+       if(data_out4 == 3'b110) begin
+       c <= 5'b10011;
+       d <= 5'b10011; end
+        if(data_out4 == 3'b101) begin
+       b <= data_out3; end end
+      
+       
+  end
+
+ndatapath npt(.clk(nextclock),.rst(rst),.load(load),.perform(perform),.perform2(insex),.data_in(data_in),.ins(data_out4),.data_out(data_out),.data_out2(data_out2),.data_out3(data_out3),.data_out1(data_out1));
+nsevensegment mySevSeg(clk, a, b, c, d, seg, dp, an);
+
+endmodule
+`timescale 1ns / 1ps
+
+module ncontrol2
+(
+  input wire clk,
+  input wire rst,
+  input wire insload,
+  input wire insex,
+  input wire perform,
+  input wire [2:0] ins,
+  output reg [2:0] data_out
+);
+wire [2:0] data_outt;
+reg [2:0] check = 3'b000;
+reg [2:0] check2 = 3'b000;
+
+always @ (posedge clk)
+        begin
+        if(insex == 1 & check == 3'b000)
+        begin
+        data_out <= data_outt;
+        check = 3'b001;
+       end
+       else if(perform == 1& check2 == 3'b000)
+       begin
+       data_out <= ins;
+       check2 = 3'b001;
+       end
+        else if(insex == 0 & perform == 0) 
+       begin check = 3'b000; check2 = 3'b000;
+       end
+        if(insex == 0) 
+       begin check = 3'b000;
+       end
+        if(perform == 0) 
+       begin check2 = 3'b000;
+       end
+       
+        
+        end
+nshiftreg nsh 
+(
+  .clk(clk),
+  .rst(rst),
+  .load(insload),
+  .perform(insex),
+  .data_in(ins),
+  .data_out(data_outt)
+ );
+endmodule
+`timescale 1ns / 1ps
+
+module ndatapath
+(
+  input wire clk,
+  input wire rst,
+  input wire [3:0] data_in,
+  input wire [2:0] ins,
+  input wire mload,
+  input wire mout,
+  input wire rload,
+  input wire rout1,
+  input wire rout2,
+  output reg [3:0] result,
+  output reg [3:0] datafileout1,
+  output reg [3:0] datafileout2,
+  output reg [3:0] remainderout
+ 
+);
+reg [3:0] memoryout;
+nregdata regm
+(
+  .clk(clk),
+  .rst(rst),
+  .mload(mload),
+  .mout(mout),
+  .data_in(datafileout1),
+  .data_out(memoryout)
+);
+nreg regd 
+(
+  .clk(clk),
+  .rst(rst),
+  .rload(rload),
+   .rload2(mout),
+  .rout1(rout1),
+  .rout2(rout2),
+  .data_reg_in(memoryout),
+  .data_in(data_in),
+  .data_out1(datafileout1),
+  .data_out2(datafileout2)
+);
+nalu alu1 (
+  
+  .data_in1(datafileout1),
+  .data_in2(datafileout2),
+  .ins(ins),
+  .result(result),
+  .remainresult(remainderout)
+);
+
+
+
+
+
+
+
+
+endmodule
+`timescale 1ns / 1ps
+module nregdata(
+  input wire clk,
+  input wire rst,
+  input wire mload,
+  input wire mout,
+  input wire [3:0] data_in,
+  output reg [3:0] data_out
+);
+
+reg [3:0] stack [0:15];
+reg  [2:0]top = 3'b000;
+reg [2:0] check= 3'b000;
+reg [2:0]check2= 3'b000;
+
+always @(posedge clk) begin
+  if (rst) begin
+    top <= 3'b000;
+    check <= 3'b000;
+    check2 <= 3'b000;
+    stack[0] <= 4'b0000;
+    stack[1] <= 4'b0000;
+    stack[2] <= 4'b0000;
+    stack[3] <= 4'b0000;
+    stack[4] <= 4'b0000;
+    stack[5] <= 4'b0000;
+    stack[6] <= 4'b0000;
+    stack[7] <= 4'b0000;
+    stack[8] <= 4'b0000;
+    stack[9] <= 4'b0000;
+    stack[10] <= 4'b0000;
+    stack[11] <= 4'b0000;
+    stack[12] <= 4'b0000;
+    stack[13] <= 4'b0000;
+    stack[14] <= 4'b0000;
+    stack[15] <= 4'b0000;
+    data_out <= 4'b0000;
+   
+  end else begin
+    if (mload & check == 3'b000) begin
+        stack[top] <= data_in;
+        top <= top + 3'b001;
+        check = 3'b001;
+    end 
+    else if (mout & check2 == 3'b000) begin
+     data_out <= stack[top-1];
+        top <= top- 3'b001;
+        check2 = 3'b001;      
+      end 
+       if(~mload & ~mout) begin check <=3'b000;check2 <=3'b000;  end
+      if(~mload) begin check <=3'b000;  end
+     if(~mout) begin check2 <=3'b000; end
+    
+      end 
+       end
+      
+   
+ 
+
+
+endmodule`timescale 1ns / 1ps
+
+
+module ndatapathtest;
+
+
+  // Inputs
+  reg clk;
+  reg rst;
+
+  reg [3:0] data_in;
+  reg [2:0] ins;
+
+  reg mload;
+  reg mout;
+  reg rload;
+  reg rout1;
+  reg rout2;
+  
+  // Outputs
+  wire [3:0] result;
+  wire [3:0] datafileout1;
+  wire [3:0] datafileout2;
+ 
+  wire [3:0] remainderout;
+ 
+  
+
+  ndatapath dutt (
+    .clk(clk),
+    .rst(rst),
+    .ins(ins),
+    .data_in(data_in),
+ 
+    .mload(mload),
+    .mout(mout),
+    .rload(rload),
+    .rout1(rout1),
+    .rout2(rout2),
+    .result(result),
+    .datafileout1(datafileout1),
+    .datafileout2(datafileout2),
+ 
+    .remainderout(remainderout)
+   
+  );
+
+  
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end
+  
+  // Stimulus process
+  initial begin
+      clk = 0;
+   
+
+    data_in = 0;
+  
+    mload = 0;
+    mout = 0;
+    rload = 0;
+    rout1 = 0;
+    rout2 = 0;
+    #10 rst = 0;
+    // Load data into register
+    rload = 1;
+    data_in = 4'b1010;
+    #10 rload = 0; #10;
+    rload = 1;
+    data_in = 4'b0011;
+    #10 rload = 0;#10;
+    ins = 3'b011;
+    rout1 = 1;
+    #10 rout1 = 0; #10;
+     
+    rload = 1;
+    data_in = 4'b0101;
+    #10 rload = 0; #10;
+    rload = 1;
+    data_in = 4'b0100;
+    #10 rload = 0;#10;
+    ins = 3'b010;
+    rout1 = 1;
+    #10 rout1 = 0;  #10;
+    
+    rload = 1;
+    data_in = 4'b0010;
+    #10 rload = 0; #10;
+    rload = 1;
+    data_in = 4'b0010;
+    #10 rload = 0;#10;
+    ins = 3'b100;
+    rout1 = 1;
+    #10 rout1 = 0;  #10;
+    
+    rload = 1;
+    data_in = 4'b0110;
+    #10 rload = 0; #10;
+    rload = 1;
+    data_in = 4'b0011;
+    #10 rload = 0;#10;
+    ins = 3'b101;
+    rout1 = 1;
+    #10 rout1 = 0;  #10;
+  
+      rload = 1;
+    data_in = 4'b0001;
+    #10 rload = 0; #10;
+    rload = 1;
+    data_in = 4'b0001;
+    #10 rload = 0; #10;
+      rload = 1;
+    data_in = 4'b0001;
+    #10 rload = 0; #10;
+    rload = 1;
+    
+    data_in = 4'b0001;
+    #10 rload = 0; #10;
+      
+    
+    ins = 3'b011;
+    rout2 = 1;#10;
+    mload = 1;#10;
+    rout2 = 0;
+    mload = 0; #10;
+    mout = 1; #10;
+    rload = 1;#10;
+    #10;
+    mout = 0;#10;
+    rload = 0; #10;
+     rout2 = 1;
+    mload = 1;#10;
+    rout2 = 0;
+    mload = 0; #10;
+    mout = 1; #10;
+    rload = 1;#10;
+    mout = 0;
+    rload = 0;  #10;
+        rout1 = 1;
+    #10 rout1 = 0;  #10;
+   
+ end
+
+endmodule
+`timescale 1ns / 1ps
+module nalu
+(
+  
+  input wire [3:0] data_in1,
+  input wire [3:0] data_in2,
+  input wire [2:0] ins,
+  output reg [3:0] result,
+  output reg [3:0] remainresult
+);
+logic [3:0] data2n;
+logic [3:0] data2min;
+assign data2min = ~data_in2;
+assign data2n = data2min + 4'b1;
+
+int data1i,data2i,res2,res3;
+
+logic signed[3:0] resss,ressss;
+
+always_comb begin  
+if(data_in1[3] == 1 )
+begin
+data1i = data_in1[2:0] - 8;
+ end 
+ else
+ begin 
+ data1i = data_in1;
+ end
+ 
+ if(data_in2[3] == 1 )
+begin
+data2i = data_in2[2:0] - 8;
+ end 
+ else
+ begin 
+ data2i = data_in2;
+ end
+
+    res2 = data2i / data1i;
+    resss = $signed(res2);
+    resss = resss[3:0];
+    res3 = data2i % data1i;
+    ressss = $signed(res3);
+    ressss = ressss[3:0];
+    remainresult <=  4'b0000;
+case (ins)
+    3'b011: result <= data_in1 + data_in2;
+    3'b010: result <= data_in1 + data2n;
+    3'b100:  result <= data_in1 * data_in2;
+    3'b101: begin result <= resss; remainresult <= ressss; end
+    3'b110: result <= data_in1; 
+    3'b000: result <= 4'b0000;
+    3'b001: result <= 4'b0000;
+    default: begin result <= 4'b0000; remainresult <=  4'b0000; end
+  endcase
+end
+
+endmodule`timescale 1ns / 1ps
+module nreg
+(
+  input wire clk,
+  input wire rst,
+  input wire rload,
+  input wire rload2,
+   input wire rout1,
+    input wire rout2,
+  input wire [3:0] data_in,
+  input wire [3:0] data_reg_in,
+  output reg [3:0] data_out1,
+  output reg [3:0] data_out2
+);
+
+reg [3:0] stack [0:7];
+reg  [2:0]top = 3'b000;
+reg [2:0] check= 3'b000;
+reg [2:0]check2= 3'b000;
+reg [2:0]check3= 3'b000;
+reg [2:0]check4= 3'b000;
+always @(posedge clk) begin
+  if (rst) begin
+    top <= 3'b000;
+    check <= 3'b000;
+    check2 <= 3'b000;
+    check3 <= 3'b000;
+    check4 <= 3'b000;
+    stack[0] <= 4'b0000;
+    stack[1] <= 4'b0000;
+    stack[2] <= 4'b0000;
+    stack[3] <= 4'b0000;
+    stack[4] <= 4'b0000;
+    stack[5] <= 4'b0000;
+    stack[6] <= 4'b0000;
+    stack[7] <= 4'b0000;
+    data_out1 <= 4'b0000;
+    data_out2 <= 4'b0000;
+  end else begin
+    if (rload & check == 3'b000) begin   
+        stack[top] <= data_in;
+        top <= top + 3'b001;
+        check = 3'b001;
+    end 
+    else if (rload2 & check4 == 3'b000) begin   
+        stack[top] <= data_reg_in;
+        top <= top + 3'b001;
+        check4 = 3'b001;
+    end 
+     else if (rout1  & check2 == 3'b000) begin
+        data_out1 <= stack[top-1];
+        data_out2 <= stack[top-2]; 
+        top <= top - 3'b010;
+         check2 = 3'b001; end
+    else   if (rout2 & check3 == 3'b000) begin
+        data_out1 <= stack[top-1];
+        data_out2 <= 3'b000; 
+        top <= top- 3'b001;   
+         check3 = 3'b001;       
+      end 
+    
+       if(~rload & ~rout1 & ~rout2 & ~rload2) begin check <=3'b000;check2 <=3'b000; check3 <=3'b000; check4 <=3'b000; end
+      if(~rout1 ) begin check2 <=3'b000;  end
+       if(~rout2) begin check3 <=3'b000;  end
+      if( ~rload) begin check <=3'b000; end
+       if(~rload2 ) begin check4 <=3'b000; end
+      
+ 
+ 
+end
+end
+endmodule`timescale 1ns / 1ps
+
+module ncontrol2
+(
+  input wire clk,
+  input wire rst,
+  input wire insload,
+  input wire insex,
+  input wire perform,
+  input wire [2:0] ins,
+  output reg [2:0] data_out,
+  output reg mload,
+  output reg mout,
+  output reg rload,
+  output reg rout1,
+  output reg rout2
+);
+reg [2:0] data_outt ;
+reg [2:0] check = 3'b000;
+reg [2:0] check3 = 3'b000;
+reg [2:0] check2 = 3'b000;
+
+/*
+nshiftreg nsh 
+(
+  .clk(clk),
+  .rst(rst),
+  .load(insload),
+  .perform(insex),
+  .data_in(ins),
+  .data_out(data_outt)
+ );*/
+always @ (posedge clk)
+        begin
+         data_outt <= ins;
+        if(rst == 1)
+        begin
+        data_out <= 3'b111;
+        end
+
+       if(insload == 1 & check3 == 3'b000)
+       begin 
+       rout1 <= 0;
+       rout2 <= 0;
+       rload <= 1;
+       mload <= 0;
+       mout <= 0;
+       data_out <= 3'b111;
+       check3 = 3'b001;
+       end
+        if(perform == 1& check2 == 3'b000) begin
+       if(data_outt == 3'b011 || data_outt == 3'b010 || data_outt == 3'b100 || data_outt == 3'b101 )
+       begin 
+       rout1 <= 1;
+       rout2 <= 0;
+       rload <= 0;
+       mload <= 0;
+       mout <= 0;
+       end
+       else if(data_outt == 3'b000)
+       begin
+       rout1 <= 0;
+       rout2 <= 0;
+       rload <= 0;
+       mload <= 0;
+       mout <= 1;
+       end
+        else if(data_outt == 3'b001)
+       begin
+       rout1 <= 0;
+       rout2 <= 1;
+       rload <= 0;
+       mload <= 1;
+       mout <= 0;
+       end
+         else if(data_outt == 3'b110)
+       begin
+       rout1 <= 0;
+       rout2 <= 1;
+       rload <= 0;
+       mload <= 0;
+       mout <= 0;
+       end
+       data_out <= data_outt;
+       check2 = 3'b001;
+       end
+       
+       
+
+       if(insex == 1 & check == 3'b000)
+        begin
+        data_out <= data_outt;
+        check = 3'b001;
+       end
+       
+        if(insex == 0 & perform == 0) 
+       begin check = 3'b000; check2 = 3'b000;
+       end
+        if(insex == 0) 
+       begin check = 3'b000;
+       end
+        if(perform == 0) 
+       begin check2 = 3'b000;
+       end
+       if(insload== 0) 
+       begin check3 = 3'b000;
+       end
+        end
+
+endmodule
+`timescale 1ns / 1ps
+module ncontrol_test;
+
+
+reg clk = 0;
+reg rst;
+reg load;
+reg perform;
+reg [3:0] data_in;
+reg [2:0] alu_opcode;
+reg [3:0] result;
+
+ncontrol dutt 
+(
+  .clk(clk),
+  .rst(rst),
+  .load(load),
+  .perform(perform),
+  .data_in(data_in),
+  .alu_opcode(alu_opcode),
+  .data_out(result)
+);
+
+initial begin
+
+  // Reset the module
+  rst = 1;
+  load = 0;
+  alu_opcode = 3'b001;
+  perform = 0;
+  data_in = 0;
+  #10;
+  rst = 0;
+
+  // Test case 1: Load data
+  load = 1;
+  data_in = 4'b0011;
+  #10;
+  load = 0;
+    #5;
+
+
+  // Check the result
+  load = 1;
+  data_in = 4'b0100;
+  #10;
+  load = 0;
+#10;
+  
+
+  // Test case 2: Perform addition operation
+  perform = 1;
+
+  
+  
+  #10;
+  perform = 0;
+
+end
+always #2.5 clk = ~clk;
+endmodule
+`timescale 1ns / 1ps
+module ncontrol
+(
+
+  input wire clk,
+  input wire rst,
+  input wire load,
+  input wire insload,
+  input wire insex,
+  input wire perform,
+  input wire [3:0] data_in,
+  input wire [2:0] ins,
+  output reg [3:0] data_out,
+  output logic [6:0] seg,
+  output logic dp,
+  output logic [3:0] an
+);
+logic nextclock;
+ntimer tim (.clock(clk),.nextclock(nextclock));
+wire [3:0] data_out1;
+wire [3:0] data_out2;
+wire [3:0] data_out3;
+wire [3:0] data_out_store;
+wire [3:0] data_in_store;
+wire [2:0] data_out4;
+wire mload,rload ,rout1,rout2, mout;
+reg [2:0] check = 3'b000;
+logic [4:0] b= 5'b10011;
+logic [4:0] c = 5'b10011;
+logic [4:0]d = 5'b10011;
+logic [4:0]a = 5'b10011;
+
+ncontrol2 nc2(.clk(clk),.rst(rst),.insload(load),.insex(insex),.perform(perform),.ins(ins),.data_out(data_out4),.mload(mload),.rload(rload),.mout(mout),.rout1(rout1),.rout2(rout2));
+always @ (posedge nextclock)
+        begin
+        if(rst == 1) begin 
+        a <= 5'b10011;
+        b <= 5'b10011;
+        c <= 5'b10011;
+        d <= 5'b10011;
+        
+        end
+        else if(perform == 1 & check == 3'b000 || insex ==1 & check == 3'b000 ) begin
+        a <= data_out;
+         c <= data_out1;
+       d <= data_out2;
+       b <= 5'b10011;
+       if(data_out4 == 3'b110) begin
+       c <= 5'b10011;
+       d <= 5'b10011; end
+        if(data_out4 == 3'b101) begin
+       b <= data_out3; end 
+       check = 3'b001;
+       end
+      else if (perform == 0 & insex == 0) begin check = 3'b000; end
+       if (perform == 0 ) begin check = 3'b000; end
+        if ( insex == 0) begin check = 3'b000; end
+  end
+
+ndatapath npt(.clk(nextclock),.rst(rst),.mload(mload),.rload(rload),.mout(mout),.rout1(rout1),.rout2(rout2),.data_in(data_in),.ins(data_out4),.result(data_out),.datafileout1(data_out1),.datafileout2(data_out2),.remainderout(data_out3));
+nsevensegment mySevSeg(clk, a, b, c, d, seg, dp, an);
+endmodule`timescale 1ns / 1ps
+
+
+module ntimer
+(
+    input logic clock,
+    output logic nextclock
+);
+
+localparam int threeseconds = 50000000;
+int unsigned cntr = 0;
+always @(posedge clock) begin
+if(cntr == 1000000) begin
+nextclock = 0;
+end
+cntr = cntr + 1;
+if(cntr == threeseconds) begin
+nextclock = 1;
+cntr = 0;
+end end
+
+
+endmodule

@@ -1,0 +1,208 @@
+set_property PACKAGE_PIN V17 [get_ports {A}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {A}]
+set_property PACKAGE_PIN V16 [get_ports {B}]
+        set_property IOSTANDARD LVCMOS33 [get_ports {B}]
+set_property PACKAGE_PIN W16 [get_ports {in}]
+            set_property IOSTANDARD LVCMOS33 [get_ports {in}]
+            
+set_property PACKAGE_PIN U16 [get_ports {Y}]                      
+         set_property IOSTANDARD LVCMOS33 [get_ports {Y}]
+set_property PACKAGE_PIN E19 [get_ports {out}]                      
+         set_property IOSTANDARD LVCMOS33 [get_ports {out}]
+`timescale 1ns / 1ps
+module testFullSub;
+wire Y;
+wire out;
+reg in;
+reg A;
+reg B;
+subFull fullsub
+( .A(A),
+ .B(B),
+ .in(in),
+ .Y(Y),
+ .out(out) );
+initial begin
+ A = 0; B = 0; in = 0; #10;
+ $display("Case 1 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 0; B = 0; in = 1; #10;
+ $display("Case 2 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 0; B = 1; in = 0; #10;
+ $display("Case 3 - A=%b, B=%b, in=%b, Y=%b, out= %b", A, B, in, Y, out);
+ A = 0; B = 1; in = 1; #10;
+ $display("Case 4 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 1; B = 0; in = 0; #10;
+ $display("Case 5 – A = %b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 1; B = 0; in = 1; #10;
+ $display("Case 6 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 1; B = 1; in = 0; #10;
+ $display("Case 7 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ A = 1; B = 1; in = 1; #10;
+ $display("Case 8 - A=%b, B=%b, in=%b, Y=%b, out=%b", A, B, in, Y, out);
+ $finish;
+end
+endmodule
+`timescale 1ns / 1ps
+module test_fullAdd;
+wire sum;
+wire carryLast;
+reg x, y, carryFirst;
+addFull fadd
+(
+ .a(x),
+ .b(y),
+ .carryfirst(carryFirst),
+ .sum(sum),
+ .carrylast(carryLast) );
+initial begin
+ x = 0; y = 0; carryFirst = 0; #10;
+ $display("Case 1 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 0; y = 1; carryFirst = 0; #10;
+ $display("Case 2 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 1; y = 0; carryFirst = 0; #10;
+ $display("Case 3 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 1; y = 1; carryFirst = 0; #10;
+ $display("Case 4 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 0; y = 0; carryFirst = 1; #10;
+ $display("Case 5 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 0; y = 1; carryFirst = 1; #10;
+ $display("Case 6 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 1; y = 0; carryFirst = 1; #10;
+ $display("Case 7 - x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);
+ x = 1; y = 1; carryFirst = 1; #10;
+ $display("Case 8- x=%b, y=%b, carryFirst=%b, sum=%b, carryLast=%b", x, y, carryFirst, sum, carryLast);end
+endmodule
+`timescale 1ns / 1ps
+module testHalfSub;
+reg X;
+reg Y;
+wire s;
+wire c;
+halfsub halfSubs(
+ .x(X),
+ .y(Y),
+ .s(s),
+ .c(c)
+);
+initial
+begin
+X = 0; Y = 0; #10;
+$display("Case 1 - X=%b, Y=%b, sum=%b, carry=%b", X, Y, s, c);
+X = 0; Y = 1; #10;
+$display("Case 2 - X=%b, Y=%b, sum=%b, carry=%b", X, Y, s, c);
+X = 1; Y = 0; #10;
+$display("Case 3 - X=%b, Y=%b, sum=%b, carry=%b", X, Y, s, c);
+X = 1; Y = 1; #10;
+$display("Case 4 - X=%b, Y=%b, sum=%b, carry=%b", X, Y, s, c);
+$finish;
+end
+endmodule
+`timescale 1ns / 1ps
+module testHalfAdd;
+reg a;
+reg b;
+wire s, c;
+halfadd halfAdd
+(
+ .x(a),
+ .y(b),
+ .carry(c),
+ .sum(s)
+);
+initial
+begin
+ a = 0; b = 0;
+ #10 $display("Case 1 - a=%b, b=%b, sum=%b, carry=%b", a, b, s, c);
+ a = 0; b = 1;
+ #10 $display("Case 2 - a=%b, b=%b, sum=%b, carry=%b", a, b, s, c);
+ a = 1; b = 0;
+ #10 $display("Case 3 - a=%b, b=%b, sum=%b, carry=%b", a, b, s, c);
+ a = 1; b = 1;
+ #10 $display("Case 4 - a=%b, b=%b, sum=%b, carry=%b", a, b, s, c);
+ $finish;
+end
+endmodule
+`timescale 1ns / 1ps
+module halfadd
+(
+ input x,
+ input y,
+ output carry,
+ output sum
+);
+assign carry = x & y;
+assign sum = x ^ y;
+endmodule
+
+`timescale 1ns / 1ps
+module halfsub
+(
+ input x,
+ input y,
+ output s,
+ output c
+);
+ 
+ assign c = x ^ y;
+ assign s = ~x & y;
+endmodule
+
+`timescale 1ns / 1ps
+module addFull
+(
+ input a,
+ input b,
+ input carryfirst,
+ output sum,
+ output carrylast
+);
+wire halfAddSum1;
+wire halfAddCar1;
+wire halfAddSum2;
+wire halfAddCar2;
+halfadd half1
+(
+ .x(a),
+ .y(b),
+ .sum(halfAddSum1),
+ .carry(halfAddCar1)
+);
+halfadd half2
+(
+ .x(halfAddSum1),
+ .y(carryfirst),
+ .sum(halfAddSum2),
+ .carry(halfAddCar2)
+);
+assign sum = halfAddSum2;
+assign carrylast = halfAddCar1 | halfAddCar2;
+endmodule
+`timescale 1ns / 1ps
+module subFull
+(
+ output Y,
+ output out,
+ input A,
+ input B,
+ input in
+);
+wire out1;
+wire out2;
+wire Y1;
+wire Y2;
+halfsub halfSub1
+(
+ .x(A),
+ .y(B),
+ .c(Y1),
+ .s(out1)
+);
+halfsub halfSub2
+(
+ .x(Y1),
+ .y(in),
+ .c(Y),
+ .s(out2)
+);
+assign out = out1 | out2;
+endmodule

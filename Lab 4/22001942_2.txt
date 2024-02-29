@@ -1,0 +1,160 @@
+`timescale 1ns / 1ps
+module finitestateverilog(
+);
+logic clck;
+logic reset;
+logic sa;
+logic sb;
+logic ared1,ared2,ared3,ayellow1,agreen1,agreen2;
+logic bred1,bred2,bred3 ,bgreen1,bgreen2,byellow1;
+
+finitestate fs
+(
+    .clck(clck),
+    .reset(reset),
+    .sa(sa),
+    .sb(sb),
+    .bred1(bred1),
+    .bred2(bred2),
+    .bred3(bred3),
+    .bgreen1(bgreen1),
+    .bgreen2(bgreen2),
+    .byellow1(byellow1),
+    .ared1(ared1),
+    .ared2(ared2),
+    .ared3(ared3),
+    .ayellow1(ayellow1),
+    .agreen2(agreen2),
+    .agreen1(agreen1)
+);
+
+initial
+begin
+reset <= 1; #10;
+reset <= 0; 
+sa = 0; sb = 0; #20;
+sa = 0; sb = 1; #20;
+sa = 1; sb = 0; #20;
+
+sa = 1; sb = 1; #20;
+sa = 1; sb = 1; #20;
+sa = 0; sb = 1; #20;
+sa = 1; sb = 0; #20;
+sa = 1; sb = 1; #20;
+
+sa = 0; sb = 0; #20;
+sa = 1; sb = 0; #20;
+sa = 0; sb = 1; #20;
+sa = 0; sb = 1; #20;
+sa = 0; sb = 0; #20;
+
+sa = 0; sb = 1; #20;
+sa = 1; sb = 1; #20;
+
+sa = 1; sb = 1; #20;
+sa = 1; sb = 1; #20;
+
+sa = 0; sb = 1; #20;
+sa = 1; sb = 0; #20;
+
+sa = 1; sb = 1; #20;
+sa = 1; sb = 0; #20;
+
+sa = 0; sb = 1; #20;
+sa = 0; sb = 0; #20;
+
+sa = 1; sb = 1; #20;
+sa = 0; sb = 0; #20;
+end
+always
+    begin
+    clck <= 1; #5;
+    clck <= 0; #5;
+end
+endmodule
+set_property PACKAGE_PIN W5 [get_ports clck]  	 	 	 	  
+ 	set_property IOSTANDARD LVCMOS33 [get_ports clck] 
+set_property PACKAGE_PIN V17 [get_ports {reset}]
+set_property IOSTANDARD LVCMOS33 [get_ports {reset}]
+set_property PACKAGE_PIN U18 [get_ports {sb}]
+set_property IOSTANDARD LVCMOS33 [get_ports {sb}]
+set_property PACKAGE_PIN W19 [get_ports {sa}]
+set_property IOSTANDARD LVCMOS33 [get_ports {sa}]
+set_property PACKAGE_PIN U16 [get_ports {ared1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {ared1}]
+set_property PACKAGE_PIN E19 [get_ports {agreen1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {agreen1}]
+set_property PACKAGE_PIN U19 [get_ports {ayellow1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {ayellow1}] 
+set_property PACKAGE_PIN V19 [get_ports {bred1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {bred1}]
+set_property PACKAGE_PIN W18 [get_ports {bgreen1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {bgreen1}]
+set_property PACKAGE_PIN U15 [get_ports {byellow1}]
+set_property IOSTANDARD LVCMOS33 [get_ports {byellow1}]
+`timescale 1ns / 1ps
+module finitestate
+(
+    input logic sa,
+    input logic sb,
+    output logic agreen1, ayellow1, ared1,
+    output logic bgreen1,byellow1, bred1,
+    input logic clck,
+    input logic reset
+);
+logic clck2;
+typedef enum logic [2:0] {s0,s1,s2,s3,s4,s5,s6,s7} State;
+State currentState;
+State nextState;
+logic nextclock;
+localparam int threeseconds = 300000000;
+int unsigned cntr = 0;
+always @(posedge clck) begin
+if(cntr == 1000000) begin
+nextclock = 0;
+end
+cntr = cntr + 1;
+if(cntr == threeseconds) begin
+nextclock = 1;
+cntr = 0;
+end end
+assign clck2 = nextclock;
+//assign clck2 = clck;
+always_ff @(posedge clck2)
+if(reset) currentState <= s0;
+else currentState <= nextState;
+always_comb
+    case(currentState)
+        s0:  if(sb) nextState = s1;
+            else nextState = s0;
+        s1: nextState = s2;
+            
+        s2: nextState = s3;
+            
+        s3: nextState = s4;
+            
+        s4: if(sb && ~sa) nextState = s4;
+            else nextState = s5;
+        s5: nextState = s6;
+            
+        s6: nextState = s7;
+            
+        s7: nextState = s0;
+           
+        default: nextState = s0;
+    endcase
+assign agreen1 = (currentState == s2| currentState == s3| currentState == s4| currentState == s5| currentState == s6 | currentState == s0);
+
+
+assign ared1 = (currentState == s2| currentState == s3| currentState == s4| currentState == s5| currentState == s6);
+
+assign ayellow1 =  1;
+
+assign bgreen1 = (currentState == s1| currentState == s2| currentState == s6| currentState == s7| currentState == s0 | currentState == s4);
+
+
+assign bred1 = (currentState == s1| currentState == s2| currentState == s6| currentState == s7| currentState == s0);
+
+assign byellow1 = 1;
+
+endmodule
